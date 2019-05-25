@@ -1,19 +1,30 @@
 import React from "react";
+import {connect} from 'react-redux';
+import {signIn,signOut} from '../actions'
 import Button from "@material-ui/core/Button";
-import AddAlert from '@material-ui/icons/AddAlert'
 import { withStyles} from "@material-ui/styles";
-import red from '@material-ui/core/colors/cyan'
 import { Typography } from "@material-ui/core";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+import {faUser} from '@fortawesome/free-regular-svg-icons';
+import {faLockOpen} from '@fortawesome/free-solid-svg-icons';
 const styles = theme=>({
   button: {
-    position:'relative',
-marginLeft:theme,
-backgroundColor:red[500], '&:hover': {
- backgroundColor: red[700],
+    position:'absolute',
+    right:'0',
+    marginRight:'10px',
+    top:'0',
+    marginTop:'10px',
+    backgroundColor:'#ef5350',
+    '&:hover':{backgroundColor:"#d50000"}
+},
+user:{
+  padding:'20px'
+},googleIcon:{
+  padding:"2px"
 } }
-});
+);
 class GoogleAuth extends React.Component {
-  state = { currentStatus: null };
   componentDidMount() {
     window.gapi.load("client:auth2", () => {
       window.gapi.client
@@ -33,30 +44,37 @@ class GoogleAuth extends React.Component {
               .getBasicProfile()
               .getName()
           });*/
-          this.setState({ currentStatus: this.auth.isSignedIn.get() });
+          this.OnAuthChange( this.auth.isSignedIn.get() );
           this.auth.isSignedIn.listen(this.OnAuthChange);
         });
     });
   }
-  OnAuthChange = () => {
-    this.setState({ currentStatus: this.auth.isSignedIn.get() });
+  OnAuthChange = (isSignedIn) => {
+    if(isSignedIn)
+    {
+this.props.signIn();
+    }
+    else
+    {
+this.props.signOut();
+    }
   };
   renderStatus() {
-    if (this.state.currentStatus === null) {
+    if (this.props.currentStatus === null) {
       return null;
-    } else if (this.state.currentStatus) {
-      const UserName = this.auth.currentUser
+    } else if (this.props.currentStatus) {
+   /*   const UserName = this.auth.currentUser
         .get()
         .getBasicProfile()
-        .getName();
-      return (<div>        <Typography variant="h6">
-          Welcome {UserName}</Typography>
+        .getName();*/
+      return (<div>      <Typography variant="h6" className={this.props.classes.user}><FontAwesomeIcon icon={faUser}/>
+          Welcome</Typography>
           <Button
-            className={this.props.classes.button} variant='contained'
+            className={this.props.classes.button} variant='contained' color='secondary'
             onClick={() => {
               this.auth.signOut();
             }}
-          >
+          ><FontAwesomeIcon icon={faLockOpen}/>
             Logout
           </Button></div>
        );
@@ -68,7 +86,7 @@ class GoogleAuth extends React.Component {
           onClick={() => {
             this.auth.signIn();
           }}
-        ><AddAlert/>
+        ><FontAwesomeIcon icon={faGoogle} size="lg" className="googleIcon"/>
           Sign In With Google
         </Button>
       );
@@ -78,4 +96,8 @@ class GoogleAuth extends React.Component {
     return <div>{this.renderStatus()}</div>;
   }
 }
-export default withStyles(styles)(GoogleAuth);
+const mapStateToProps=(state)=>
+{
+return {currentStatus : state.auth.isSignedIn};
+}
+export default connect(mapStateToProps,{signIn,signOut})(withStyles(styles)(GoogleAuth));
